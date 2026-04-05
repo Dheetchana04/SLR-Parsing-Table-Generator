@@ -1,142 +1,189 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SLR(1) Parsing Table Generator</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            padding: 20px;
-            background-color: #f9f9f9;
-            color: #333;
-        }
-        h1 {
-            color: #007BFF;
-            text-align: center;
-        }
-        textarea {
-            width: 100%;
-            height: 150px;
-            margin-bottom: 20px;
-            font-size: 16px;
-            padding: 10px;
-            border: 1px solid #ccc;
-            border-radius: 5px;
-            resize: none;
-        }
-        button {
-            display: block;
-            margin: 0 auto;
-            background-color: #007BFF;
-            color: white;
-            border: none;
-            padding: 10px 20px;
-            cursor: pointer;
-            font-size: 16px;
-            border-radius: 5px;
-            transition: background-color 0.3s;
-        }
-        button:hover {
-            background-color: #0056b3;
-        }
-        #output {
-            margin-top: 30px;
-            padding: 20px;
-            background-color: #fff;
-            border: 1px solid #ddd;
-            border-radius: 5px;
-            overflow-x: auto;
-        }
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-bottom: 20px;
-        }
-        th, td {
-            border: 1px solid #ddd;
-            padding: 8px;
-            text-align: center;
-        }
-        th {
-            background-color: #f4f4f4;
-        }
-        tr:nth-child(even) {
-            background-color: #f9f9f9;
-        }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SLR(1) Parsing Table Generator</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:#fdf6e3;--bg2:#f7edcc;--bg3:#f0e0a8;--surface:#fffdf5;
+    --border:#d9c47a;--border2:#c4a83e;
+    --text:#2c1f0a;--muted:#7a5c28;--faint:#a88c52;
+    --accent:#b05e00;--amber:#c47c00;--rust:#9b2c00;
+    --shift-c:#0e4d2a;--reduce-c:#1a3e6b;--accept-c:#7a2e00;--goto-c:#4a235a;--conflict-c:#8b0000;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:'IBM Plex Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;padding:40px 20px;
+    background-image:repeating-linear-gradient(0deg,transparent,transparent 31px,rgba(180,140,50,.08) 31px,rgba(180,140,50,.08) 32px),
+      repeating-linear-gradient(90deg,transparent,transparent 31px,rgba(180,140,50,.05) 31px,rgba(180,140,50,.05) 32px);}
+  header{text-align:center;max-width:860px;margin:0 auto 40px}
+  .top-rule{width:100%;height:3px;background:repeating-linear-gradient(90deg,var(--border2) 0,var(--border2) 8px,transparent 8px,transparent 14px);margin-bottom:24px;border-radius:2px}
+  .bottom-rule{width:100%;height:1px;background:var(--border);margin-top:22px}
+  .stamp{display:inline-block;border:2px solid var(--accent);color:var(--accent);font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:3px;text-transform:uppercase;padding:4px 14px;margin-bottom:14px;position:relative}
+  .stamp::before,.stamp::after{content:'';position:absolute;top:50%;transform:translateY(-50%);width:24px;height:2px;background:var(--border2)}
+  .stamp::before{right:100%;margin-right:8px}.stamp::after{left:100%;margin-left:8px}
+  header h1{font-family:'IBM Plex Mono',monospace;font-size:clamp(22px,4vw,38px);font-weight:600;color:var(--text);letter-spacing:-1px;line-height:1.2}
+  header h1 span{color:var(--accent)}
+  header p{margin-top:10px;color:var(--muted);font-size:14px;line-height:1.6}
+  .card{background:var(--surface);border:1px solid var(--border);border-top:3px solid var(--border2);border-radius:4px;padding:24px;max-width:860px;margin:0 auto 28px;box-shadow:2px 3px 0 var(--bg3)}
+  .section-label{font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--faint);margin-bottom:10px;display:flex;align-items:center;gap:8px}
+  .section-label::after{content:'';flex:1;height:1px;background:var(--border)}
+  .examples{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px}
+  .example-btn{font-family:'IBM Plex Mono',monospace;font-size:11px;background:var(--bg2);border:1px solid var(--border);color:var(--accent);padding:5px 13px;border-radius:2px;cursor:pointer;transition:all .15s;font-weight:500}
+  .example-btn:hover{background:var(--bg3);border-color:var(--border2)}
+  textarea{width:100%;height:120px;background:var(--bg);border:1px solid var(--border);border-radius:2px;color:var(--text);font-family:'IBM Plex Mono',monospace;font-size:14px;padding:12px;resize:vertical;outline:none;transition:border-color .15s;line-height:1.8}
+  textarea:focus{border-color:var(--amber);box-shadow:0 0 0 3px rgba(196,124,0,.1)}
+  textarea::placeholder{color:var(--faint)}
+  .hint{margin-top:8px;font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--faint)}
+  .hint code{color:var(--accent);background:var(--bg2);padding:1px 5px;border-radius:2px}
+  .btn{display:block;width:100%;max-width:260px;margin:20px auto 0;padding:12px 24px;background:var(--accent);color:#fff8ee;font-family:'IBM Plex Mono',monospace;font-weight:600;font-size:13px;letter-spacing:1px;border:none;border-radius:2px;cursor:pointer;transition:background .15s,transform .1s;box-shadow:3px 3px 0 var(--border2);text-transform:uppercase}
+  .btn:hover{background:var(--rust);transform:translate(-1px,-1px);box-shadow:4px 4px 0 var(--border2)}
+  .btn:active{transform:translate(1px,1px);box-shadow:2px 2px 0 var(--border2)}
+  #output{max-width:860px;margin:0 auto}
+  .output-card{background:var(--surface);border:1px solid var(--border);border-top:3px solid var(--border2);border-radius:4px;padding:24px;margin-bottom:20px;box-shadow:2px 3px 0 var(--bg3);animation:slideIn .3s ease}
+  @keyframes slideIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+  .output-card h3{font-family:'IBM Plex Mono',monospace;font-size:13px;font-weight:600;color:var(--accent);margin-bottom:18px;letter-spacing:.5px;text-transform:uppercase;display:flex;align-items:center;gap:10px}
+  .output-card h3 .num{background:var(--accent);color:#fff8ee;font-size:10px;width:20px;height:20px;display:flex;align-items:center;justify-content:center;border-radius:2px;flex-shrink:0}
+  .output-card h3 .line{flex:1;height:1px;background:var(--border)}
+  .ff-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:8px}
+  .ff-item{background:var(--bg);border:1px solid var(--border);border-left:3px solid var(--border2);padding:10px 12px;border-radius:2px;font-family:'IBM Plex Mono',monospace;font-size:12px}
+  .ff-item .sym{color:var(--accent);font-weight:600;margin-bottom:3px;font-size:13px}
+  .ff-item .set{color:var(--text)}
+  .states-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:8px}
+  .state-block{background:var(--bg);border:1px solid var(--border);padding:10px 13px;border-radius:2px;font-family:'IBM Plex Mono',monospace;font-size:12px}
+  .state-block .sid{font-size:10px;letter-spacing:2px;color:var(--amber);font-weight:600;margin-bottom:6px;border-bottom:1px dashed var(--border);padding-bottom:5px}
+  .state-block .item{color:var(--text);padding:1px 0;line-height:1.6}
+  .state-block .dot{color:var(--rust);font-weight:600}
+  .prod-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:8px}
+  .prod-item{background:var(--bg);border:1px solid var(--border);border-left:3px solid #1a5276;padding:8px 12px;font-family:'IBM Plex Mono',monospace;font-size:12px;border-radius:2px}
+  .prod-item .pi{color:#1a5276;font-weight:600;font-size:11px;margin-bottom:2px}
+  .prod-item .pr{color:var(--text)}
+  .table-wrap{overflow-x:auto;border:1px solid var(--border);border-radius:2px}
+  table{border-collapse:collapse;width:100%;font-family:'IBM Plex Mono',monospace;font-size:12px}
+  th{background:var(--bg2);color:var(--muted);font-size:10px;letter-spacing:1px;text-transform:uppercase;padding:9px 12px;border:1px solid var(--border);font-weight:600}
+  th.ah{color:var(--shift-c);background:#e8f5ee;border-bottom:2px solid var(--shift-c)}
+  th.gh{color:var(--goto-c);background:#f3eaf8;border-bottom:2px solid var(--goto-c)}
+  td{padding:8px 12px;border:1px solid var(--border);text-align:center;color:var(--faint);background:var(--surface);font-size:12px}
+  tr:hover td{background:var(--bg)}
+  td.sc{color:var(--text);font-weight:600;background:var(--bg2)}
+  td.sh{color:var(--shift-c);font-weight:500;background:#f0faf4}
+  td.re{color:var(--reduce-c);font-weight:500;background:#eef3fb}
+  td.ac{color:var(--accept-c);font-weight:700;background:#fdf3e8;letter-spacing:.5px}
+  td.gc{color:var(--goto-c);font-weight:500;background:#f8f0fc}
+  td.cf{color:var(--conflict-c);font-weight:700;background:#fce8e8}
+  .legend{display:flex;flex-wrap:wrap;gap:14px;margin-bottom:14px;font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--muted)}
+  .legend-item{display:flex;align-items:center;gap:6px}
+  .ld{width:18px;height:10px;border-radius:1px}
+  .badge{font-family:'IBM Plex Mono',monospace;font-size:10px;padding:2px 8px;border-radius:2px;margin-left:8px;letter-spacing:1px;font-weight:600}
+  .ok-b{background:#e8f5ee;color:var(--shift-c);border:1px solid #9ccea9}
+  .err-b{background:#fce8e8;color:var(--conflict-c);border:1px solid #e9a3a3}
+  .error-box{background:#fce8e8;border:1px solid #e9a3a3;border-left:3px solid var(--conflict-c);border-radius:2px;padding:14px 18px;color:var(--conflict-c);font-family:'IBM Plex Mono',monospace;font-size:12px;line-height:1.8;margin-top:14px}
+  .two-col{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+  @media(max-width:600px){.two-col{grid-template-columns:1fr}}
+</style>
 </head>
 <body>
-    <h1>SLR(1) Parsing Table Generator</h1>
-    <textarea id="grammar" placeholder="Enter grammar rules here (e.g., E -> E+T | T)"></textarea>
-    <button onclick="generateParsingTable()">Generate Parsing Table</button>
-    <div id="output">
-        <strong>Parsing table will appear here...</strong>
-    </div>
+<header>
+  <div class="top-rule"></div>
+  <div class="stamp">Compiler Design Tool</div>
+  <h1>SLR(1) <span>Parsing Table</span> Generator</h1>
+  <p>Enter a context-free grammar. Computes FIRST &amp; FOLLOW sets, LR(0) item sets, and the complete SLR(1) parsing table.</p>
+  <div class="bottom-rule"></div>
+</header>
 
-    <script>
-        function generateParsingTable() {
-            const grammarInput = document.getElementById('grammar').value.trim();
-            if (!grammarInput) {
-                alert("Please enter grammar rules!");
-                return;
-            }
+<div class="card">
+  <div class="section-label">Quick load</div>
+  <div class="examples">
+    <button class="example-btn" onclick="loadExample('arithmetic')">&#9654; Arithmetic expr</button>
+    <button class="example-btn" onclick="loadExample('simple')">&#9654; Simple expr</button>
+    <button class="example-btn" onclick="loadExample('list')">&#9654; List grammar</button>
+    <button class="example-btn" onclick="loadExample('stmt')">&#9654; If-statement</button>
+  </div>
+  <div class="section-label">Grammar input</div>
+  <textarea id="grammar" placeholder="E -> E + T | T&#10;T -> T * F | F&#10;F -> ( E ) | id"></textarea>
+  <div class="hint">One production per line &nbsp;|&nbsp; Use <code>|</code> for alternatives &nbsp;|&nbsp; Use <code>eps</code> or <code>&#949;</code> for empty &nbsp;|&nbsp; Uppercase = NonTerminal</div>
+  <button class="btn" onclick="generateParsingTable()">&#9654; Generate Table</button>
+</div>
 
-            try {
-                // Dummy Data for Parsing Table (Replace with Actual Logic)
-                const terminals = ['+', '*', '(', ')', 'id', '$'];
-                const nonTerminals = ['E', 'T', 'F'];
-                const states = ['S0', 'S1', 'S2', 'S3', 'S4', 'S5'];
-                
-                const actionTable = [
-                    { '+': '', '*': '', '(': 'S4', ')': '', 'id': 'S5', '$': '' },
-                    { '+': 'S6', '*': '', '(': '', ')': '', 'id': '', '$': 'accept' },
-                    { '+': 'R2', '*': 'S7', '(': '', ')': 'R2', 'id': '', '$': 'R2' },
-                    { '+': 'R4', '*': 'R4', '(': '', ')': 'R4', 'id': '', '$': 'R4' },
-                    { '+': '', '*': '', '(': 'S4', ')': '', 'id': 'S5', '$': '' },
-                    { '+': 'R6', '*': 'R6', '(': '', ')': 'R6', 'id': '', '$': 'R6' }
-                ];
-                
-                const gotoTable = [
-                    { 'E': 'S1', 'T': 'S2', 'F': 'S3' },
-                    { 'E': '', 'T': '', 'F': '' },
-                    { 'E': '', 'T': '', 'F': '' },
-                    { 'E': '', 'T': '', 'F': '' },
-                    { 'E': 'S8', 'T': 'S2', 'F': 'S3' },
-                    { 'E': '', 'T': '', 'F': '' }
-                ];
+<div id="output"></div>
 
-                // Generate HTML Table
-                let output = '<h3>SLR(1) Parsing Table</h3>';
-                output += '<table><tr><th>State</th>';
+<script>
+const EXAMPLES={arithmetic:`E -> E + T | T\nT -> T * F | F\nF -> ( E ) | id`,simple:`S -> A A\nA -> a A | b`,list:`L -> L , id | id`,stmt:`S -> if E then S | if E then S else S | a\nE -> b`};
+function loadExample(n){document.getElementById('grammar').value=EXAMPLES[n]}
 
-                terminals.forEach(function(term) {
-                    output += '<th>' + term + '</th>';
-                });
-                nonTerminals.forEach(function(nonTerm) {
-                    output += '<th>' + nonTerm + '</th>';
-                });
-                output += '</tr>';
+function parseGrammar(input){
+  const lines=input.split('\n').map(l=>l.trim()).filter(l=>l&&l.includes('->'));
+  const productions=[],nonTerminals=new Set(),terminals=new Set();
+  for(const line of lines){const[lhsRaw,rhsRaw]=line.split('->');const lhs=lhsRaw.trim();nonTerminals.add(lhs);for(const alt of rhsRaw.split('|')){const rhs=alt.trim().split(/\s+/).filter(s=>s).map(s=>(s==='eps'||s==='ε')?'ε':s);productions.push({lhs,rhs});}}
+  for(const p of productions)for(const s of p.rhs)if(s!=='ε'&&!nonTerminals.has(s))terminals.add(s);
+  return{productions,nonTerminals:[...nonTerminals],terminals:[...terminals]};
+}
+function augment(g){const s=g.productions[0].lhs,ns=s+"'";return{productions:[{lhs:ns,rhs:[s]},...g.productions],nonTerminals:[ns,...g.nonTerminals],terminals:g.terminals,startSymbol:ns};}
+function computeFirst(g){const{productions,nonTerminals,terminals}=g,F={};for(const nt of nonTerminals)F[nt]=new Set();for(const t of terminals)F[t]=new Set([t]);F['$']=new Set(['$']);F['ε']=new Set(['ε']);let ch=true;while(ch){ch=false;for(const{lhs,rhs}of productions){const b=F[lhs].size;if(rhs[0]==='ε'){F[lhs].add('ε');}else{let ae=true;for(const s of rhs){const fs=F[s]||new Set([s]);for(const f of fs)if(f!=='ε')F[lhs].add(f);if(!fs.has('ε')){ae=false;break;}}if(ae)F[lhs].add('ε');}if(F[lhs].size!==b)ch=true;}}return F;}
+function firstSeq(seq,F){const r=new Set();let ae=true;for(const s of seq){const fs=F[s]||new Set([s]);for(const f of fs)if(f!=='ε')r.add(f);if(!fs.has('ε')){ae=false;break;}}if(ae)r.add('ε');return r;}
+function computeFollow(g,F){const{productions,nonTerminals,startSymbol}=g,FL={};for(const nt of nonTerminals)FL[nt]=new Set();FL[startSymbol].add('$');let ch=true;while(ch){ch=false;for(const{lhs,rhs}of productions){for(let i=0;i<rhs.length;i++){const B=rhs[i];if(!nonTerminals.includes(B))continue;const b=FL[B].size,beta=rhs.slice(i+1);if(!beta.length){for(const f of FL[lhs])FL[B].add(f);}else{const fb=firstSeq(beta,F);for(const f of fb)if(f!=='ε')FL[B].add(f);if(fb.has('ε'))for(const f of FL[lhs])FL[B].add(f);}if(FL[B].size!==b)ch=true;}}}return FL;}
+function itemKey(it){return`${it.prod}:${it.dot}`}
+function closure(items,prods){const m=new Map();for(const it of items)m.set(itemKey(it),it);let ch=true;while(ch){ch=false;for(const it of m.values()){const p=prods[it.prod];if(it.dot>=p.rhs.length)continue;const sym=p.rhs[it.dot];for(let i=0;i<prods.length;i++){if(prods[i].lhs!==sym)continue;const k=itemKey({prod:i,dot:0});if(!m.has(k)){m.set(k,{prod:i,dot:0});ch=true;}}}}return[...m.values()];}
+function gotoSet(items,sym,prods){const mv=items.filter(it=>prods[it.prod].rhs[it.dot]===sym).map(it=>({prod:it.prod,dot:it.dot+1}));return mv.length?closure(mv,prods):[];}
+function stateKey(items){return items.map(itemKey).sort().join('|')}
+function buildLR0(g){const{productions,nonTerminals,terminals}=g,init=closure([{prod:0,dot:0}],productions),states=[init],idx=new Map([[stateKey(init),0]]),trans=[],all=[...nonTerminals,...terminals],q=[0];while(q.length){const si=q.shift();for(const sym of all){const nx=gotoSet(states[si],sym,productions);if(!nx.length)continue;const k=stateKey(nx);let ni;if(!idx.has(k)){ni=states.length;idx.set(k,ni);states.push(nx);q.push(ni);}else ni=idx.get(k);trans.push({from:si,sym,to:ni});}}return{states,trans};}
+function buildTable(g,FL){const{productions,nonTerminals,terminals,startSymbol}=g,{states,trans}=buildLR0(g),allT=[...terminals,'$'],ACTION=states.map(()=>({})),GOTO=states.map(()=>({})),conflicts=[];for(const{from,sym,to}of trans){if(terminals.includes(sym)||sym==='$'){const e=`s${to}`;if(ACTION[from][sym]&&ACTION[from][sym]!==e)conflicts.push({state:from,sym,a:ACTION[from][sym],b:e});ACTION[from][sym]=e;}else if(nonTerminals.includes(sym)){GOTO[from][sym]=to;}}for(let si=0;si<states.length;si++){for(const it of states[si]){const p=productions[it.prod];if(it.dot===p.rhs.length||p.rhs[0]==='ε'){if(p.lhs===startSymbol&&it.dot===1){if(ACTION[si]['$']&&ACTION[si]['$']!=='acc')conflicts.push({state:si,sym:'$',a:ACTION[si]['$'],b:'acc'});ACTION[si]['$']='acc';}else{for(const t of(FL[p.lhs]||new Set())){const e=`r${it.prod}`;if(ACTION[si][t]&&ACTION[si][t]!==e)conflicts.push({state:si,sym:t,a:ACTION[si][t],b:e});ACTION[si][t]=e;}}}}}return{ACTION,GOTO,states,allT,nonTerminals,conflicts,productions};}
 
-                states.forEach(function(state, index) {
-                    output += '<tr><td>' + state + '</td>';
-                    terminals.forEach(function(term) {
-                        output += '<td>' + (actionTable[index][term] || '') + '</td>';
-                    });
-                    nonTerminals.forEach(function(nonTerm) {
-                        output += '<td>' + (gotoTable[index][nonTerm] || '') + '</td>';
-                    });
-                    output += '</tr>';
-                });
+function generateParsingTable(){
+  const input=document.getElementById('grammar').value.trim(),out=document.getElementById('output');
+  if(!input){out.innerHTML=`<div class="output-card"><div class="error-box"><strong>Error:</strong> Please enter grammar rules.</div></div>`;return;}
+  try{
+    const raw=parseGrammar(input);if(!raw.productions.length)throw new Error("No valid productions found.");
+    const g=augment(raw),F=computeFirst(g),FL=computeFollow(g,F);
+    const{ACTION,GOTO,states,allT,nonTerminals,conflicts,productions}=buildTable(g,FL);
+    const gotoNTs=nonTerminals.filter(n=>n!==g.startSymbol);
+    let html='';
 
-                output += '</table>';
-                document.getElementById('output').innerHTML = output;
+    html+=`<div class="output-card"><h3><span class="num">1</span>FIRST &amp; FOLLOW sets<span class="line"></span></h3><div class="two-col"><div><div class="section-label">FIRST</div><div class="ff-grid">`;
+    for(const nt of raw.nonTerminals)html+=`<div class="ff-item"><div class="sym">${nt}</div><div class="set">{ ${[...(F[nt]||[])].sort().join(', ')||'∅'} }</div></div>`;
+    html+=`</div></div><div><div class="section-label">FOLLOW</div><div class="ff-grid">`;
+    for(const nt of raw.nonTerminals)html+=`<div class="ff-item"><div class="sym">${nt}</div><div class="set">{ ${[...(FL[nt]||[])].sort().join(', ')||'∅'} }</div></div>`;
+    html+=`</div></div></div></div>`;
 
-            } catch (error) {
-                document.getElementById('output').innerHTML = 
-                    '<strong>Error:</strong> ' + error.message;
-            }
-        }
-    </script>
+    html+=`<div class="output-card"><h3><span class="num">2</span>LR(0) item sets <span style="font-weight:400;font-size:11px;color:var(--faint)">(${states.length} states)</span><span class="line"></span></h3><div class="states-grid">`;
+    for(let i=0;i<states.length;i++){html+=`<div class="state-block"><div class="sid">STATE I${i}</div>`;for(const it of states[i]){const p=productions[it.prod],rhs=[...p.rhs];rhs.splice(it.dot,0,`<span class="dot">•</span>`);html+=`<div class="item">${p.lhs} → ${rhs.join(' ')}</div>`;}html+=`</div>`;}
+    html+=`</div></div>`;
+
+    html+=`<div class="output-card"><h3><span class="num">3</span>Productions reference<span class="line"></span></h3><div class="prod-grid">`;
+    for(let i=1;i<productions.length;i++){const p=productions[i];html+=`<div class="prod-item"><div class="pi">r${i}</div><div class="pr">${p.lhs} → ${p.rhs.join(' ')}</div></div>`;}
+    html+=`</div></div>`;
+
+    const hasC=conflicts.length>0;
+    html+=`<div class="output-card"><h3><span class="num">4</span>SLR(1) parsing table<span class="badge ${hasC?'err-b':'ok-b'}">${hasC?conflicts.length+' CONFLICT'+(conflicts.length>1?'S':''):'NO CONFLICTS'}</span><span class="line"></span></h3>
+      <div class="legend">
+        <div class="legend-item"><div class="ld" style="background:#f0faf4;border:1px solid #9ccea9"></div>sN = shift</div>
+        <div class="legend-item"><div class="ld" style="background:#eef3fb;border:1px solid #a3b9e9"></div>rN = reduce</div>
+        <div class="legend-item"><div class="ld" style="background:#fdf3e8;border:1px solid #e9c57a"></div>acc = accept</div>
+        <div class="legend-item"><div class="ld" style="background:#f8f0fc;border:1px solid #caa3e9"></div>GOTO</div>
+        ${hasC?`<div class="legend-item"><div class="ld" style="background:#fce8e8;border:1px solid #e9a3a3"></div>conflict</div>`:''}
+      </div>
+      <div class="table-wrap"><table>
+        <tr><th rowspan="2" style="vertical-align:middle">State</th><th colspan="${allT.length}" class="ah">Action</th><th colspan="${gotoNTs.length}" class="gh">Goto</th></tr>
+        <tr>`;
+    for(const t of allT)html+=`<th>${t}</th>`;
+    for(const nt of gotoNTs)html+=`<th style="color:var(--goto-c)">${nt}</th>`;
+    html+=`</tr>`;
+
+    const cfSet=new Set(conflicts.map(c=>`${c.state}:${c.sym}`));
+    for(let i=0;i<states.length;i++){
+      html+=`<tr><td class="sc">I${i}</td>`;
+      for(const t of allT){const v=ACTION[i][t]||'';let cls='';if(cfSet.has(`${i}:${t}`))cls='cf';else if(v.startsWith('s'))cls='sh';else if(v.startsWith('r'))cls='re';else if(v==='acc')cls='ac';html+=`<td class="${cls}">${v}</td>`;}
+      for(const nt of gotoNTs){const v=GOTO[i][nt]!==undefined?GOTO[i][nt]:'';html+=`<td class="${v!==''?'gc':''}">${v}</td>`;}
+      html+=`</tr>`;
+    }
+    html+=`</table></div>`;
+    if(hasC){html+=`<div class="error-box"><strong>This grammar is NOT SLR(1) — conflicts detected:</strong><br><br>`;for(const c of conflicts)html+=`• State I${c.state}, terminal <strong>${c.sym}</strong>: "${c.a}" vs "${c.b}"<br>`;html+=`</div>`;}
+    html+=`</div>`;
+    out.innerHTML=html;
+  }catch(e){out.innerHTML=`<div class="output-card"><div class="error-box"><strong>Error:</strong> ${e.message}</div></div>`;console.error(e);}
+}
+window.onload=()=>{document.getElementById('grammar').value=EXAMPLES.arithmetic;};
+</script>
 </body>
 </html>
