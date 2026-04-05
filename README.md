@@ -7,7 +7,7 @@ Built using **HTML, CSS, and JavaScript**.
 ---
 
 ## 🚀 Live Demo
-👉 https://dheetchana04.github.io/slr-parsing-table-generator/SLR.html  
+👉 [https://dheetchana04.github.io/slr-parsing-table-generator/SLR.html  ](https://dheetchana04.github.io/SLR-Parsing-Table-Generator/SLR.html)
 
 ---
 
